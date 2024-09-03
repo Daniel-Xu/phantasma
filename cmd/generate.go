@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"os"
 	"os/exec"
-
 	"time"
 
+	"github.com/schollz/progressbar/v3" // Add this import
 	"github.com/spf13/cobra"
 )
 
@@ -54,32 +53,30 @@ func parseDate(date string) (time.Time, error) {
 }
 
 func generateCommits(startDate, endDate time.Time, maxCommits int) {
-
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	// Create a new progress bar
+	bar := progressbar.Default(int64(maxCommits))
 
 	for i := 0; i < maxCommits; i++ {
 		commitDate := startDate.AddDate(0, 0, r.Intn(int(endDate.Sub(startDate).Hours()/24)))
 		commitMessage := randomCommitMessage()
 
-		// fileContent := fmt.Sprintf("Commit %d: %s on %s\n", i+1, commitMessage, commitDate.Format(time.DateOnly))
-		// err := os.WriteFile(filePath, []byte(fileContent), 0666)
-		// if err != nil {
-		// 	log.Fatalf("Failed to write to file: %v", err)
-		// 	return
-		// }
 		commitDateStr := commitDate.Format(time.DateOnly)
 
 		gitCmd := fmt.Sprintf("git commit --allow-empty -m \"%s\" --date \"%s\"", commitMessage, commitDateStr)
 		cmd := exec.Command("bash", "-c", gitCmd)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		// cmd.Stdout = os.Stdout
+		// cmd.Stderr = os.Stderr
 		err := cmd.Run()
 		if err != nil {
 			log.Fatalf("Failed to run git command: %v", err)
 			return
 		}
-	}
 
+		// Update the progress bar
+		bar.Add(1)
+	}
 }
 
 func randomCommitMessage() string {
